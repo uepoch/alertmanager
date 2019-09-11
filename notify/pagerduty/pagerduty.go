@@ -43,9 +43,17 @@ type Notifier struct {
 	retrier *notify.Retrier
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "pagerduty"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // New returns a new PagerDuty notifier.
 func New(c *config.PagerdutyConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "pagerduty", false)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

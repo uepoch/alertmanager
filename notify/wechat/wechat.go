@@ -45,6 +45,14 @@ type Notifier struct {
 	accessTokenAt time.Time
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "wechat"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // token is the AccessToken with corpid and corpsecret.
 type token struct {
 	AccessToken string `json:"access_token"`
@@ -71,7 +79,7 @@ type weChatResponse struct {
 
 // New returns a new Wechat notifier.
 func New(c *config.WechatConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "wechat", false)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

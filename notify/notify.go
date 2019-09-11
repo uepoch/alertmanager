@@ -48,6 +48,7 @@ const MinTimeout = 10 * time.Second
 // returns an error if unsuccessful and a flag whether the error is
 // recoverable. This information is useful for a retry logic.
 type Notifier interface {
+	Name() string
 	Notify(context.Context, ...*types.Alert) (bool, error)
 }
 
@@ -83,6 +84,11 @@ func (i *Integration) SendResolved() bool {
 // Name returns the name of the integration.
 func (i *Integration) Name() string {
 	return i.name
+}
+
+// Type returns the type of the integration
+func (i *Integration) Type() string {
+	return i.notifier.Name()
 }
 
 // Index returns the index of the integration.
@@ -218,18 +224,18 @@ func newMetrics(r prometheus.Registerer) *metrics {
 			Namespace: "alertmanager",
 			Name:      "notifications_total",
 			Help:      "The total number of attempted notifications.",
-		}, []string{"integration"}),
+		}, []string{"integration", "name"}),
 		numFailedNotifications: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "alertmanager",
 			Name:      "notifications_failed_total",
 			Help:      "The total number of failed notifications.",
-		}, []string{"integration"}),
+		}, []string{"integration", "name"}),
 		notificationLatencySeconds: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "alertmanager",
 			Name:      "notification_latency_seconds",
 			Help:      "The latency of notifications in seconds.",
 			Buckets:   []float64{1, 5, 10, 15, 20},
-		}, []string{"integration"}),
+		}, []string{"integration", "name"}),
 	}
 	for _, integration := range []string{
 		"email",
@@ -242,9 +248,9 @@ func newMetrics(r prometheus.Registerer) *metrics {
 		"webhook",
 		"victorops",
 	} {
-		m.numNotifications.WithLabelValues(integration)
-		m.numFailedNotifications.WithLabelValues(integration)
-		m.notificationLatencySeconds.WithLabelValues(integration)
+		m.numNotifications.WithLabelValues(integration, "")
+		m.numFailedNotifications.WithLabelValues(integration, "")
+		m.notificationLatencySeconds.WithLabelValues(integration, "")
 	}
 	r.MustRegister(m.numNotifications, m.numFailedNotifications, m.notificationLatencySeconds)
 	return m
@@ -294,7 +300,7 @@ func createReceiverStage(
 	for i := range integrations {
 		recv := &nflogpb.Receiver{
 			GroupName:   name,
-			Integration: integrations[i].Name(),
+			Integration: integrations[i].Type(),
 			Idx:         uint32(integrations[i].Index()),
 		}
 		var s MultiStage
@@ -660,11 +666,11 @@ func (r RetryStage) Exec(ctx context.Context, l log.Logger, alerts ...*types.Ale
 		case <-tick.C:
 			now := time.Now()
 			retry, err := r.integration.Notify(ctx, sent...)
-			r.metrics.notificationLatencySeconds.WithLabelValues(r.integration.Name()).Observe(time.Since(now).Seconds())
-			r.metrics.numNotifications.WithLabelValues(r.integration.Name()).Inc()
+			r.metrics.notificationLatencySeconds.WithLabelValues(r.integration.Type(), r.integration.Name()).Observe(time.Since(now).Seconds())
+			r.metrics.numNotifications.WithLabelValues(r.integration.Type(), r.integration.Name()).Inc()
 			if err != nil {
-				r.metrics.numFailedNotifications.WithLabelValues(r.integration.Name()).Inc()
-				level.Debug(l).Log("msg", "Notify attempt failed", "attempt", i, "integration", r.integration.Name(), "receiver", r.groupName, "err", err)
+				r.metrics.numFailedNotifications.WithLabelValues(r.integration.Type(), r.integration.Name()).Inc()
+				level.Debug(l).Log("msg", "Notify attempt failed", "attempt", i, "integration", r.integration.Type(), "receiver", r.integration.Name(), "err", err)
 				if !retry {
 					return ctx, alerts, fmt.Errorf("cancelling notify retry for %q due to unrecoverable error: %s", r.integration.Name(), err)
 				}

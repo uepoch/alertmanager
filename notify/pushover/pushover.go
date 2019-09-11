@@ -41,9 +41,17 @@ type Notifier struct {
 	apiURL  string // for tests.
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "pushover"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // New returns a new Pushover notifier.
 func New(c *config.PushoverConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "pushover", false)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

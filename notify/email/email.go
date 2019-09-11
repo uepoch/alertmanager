@@ -39,6 +39,14 @@ import (
 	"github.com/prometheus/alertmanager/types"
 )
 
+// EmailType is the string identifier of the email notifier.
+const EmailType = "email"
+
+// Name implements the Notifier interface
+func (n *Email) Name() string {
+	return EmailType
+}
+
 // Email implements a Notifier for email notifications.
 type Email struct {
 	conf   *config.EmailConfig

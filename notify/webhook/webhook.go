@@ -43,9 +43,17 @@ type Notifier struct {
 	retrier *notify.Retrier
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "webhook"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // New returns a new Webhook.
 func New(conf *config.WebhookConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*conf.HTTPConfig, "webhook", false)
+	client, err := commoncfg.NewClientFromConfig(*conf.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

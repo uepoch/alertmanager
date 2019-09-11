@@ -42,9 +42,17 @@ type Notifier struct {
 	retrier *notify.Retrier
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "opsgenie"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // New returns a new OpsGenie notifier.
 func New(c *config.OpsGenieConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "opsgenie", false)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

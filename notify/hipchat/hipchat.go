@@ -38,9 +38,17 @@ type Notifier struct {
 	retrier *notify.Retrier
 }
 
+// NotifierType is the string identifier of the notifier.
+const NotifierType = "hipchat"
+
+// Name implements the Notifier interface
+func (n *Notifier) Name() string {
+	return NotifierType
+}
+
 // New returns a new Hipchat notification handler.
 func New(c *config.HipchatConfig, t *template.Template, l log.Logger) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "hipchat", false)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, NotifierType, false)
 	if err != nil {
 		return nil, err
 	}

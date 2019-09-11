@@ -23,6 +23,7 @@ import (
 
 	"github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
+	"github.com/prometheus/alertmanager/notify/webhook"
 )
 
 type sendResolved bool
@@ -51,8 +52,8 @@ func TestBuildReceiverIntegrations(t *testing.T) {
 				},
 			},
 			exp: []notify.Integration{
-				notify.NewIntegration(nil, sendResolved(false), "webhook", 0),
-				notify.NewIntegration(nil, sendResolved(true), "webhook", 1),
+				notify.NewIntegration(&webhook.Notifier{}, sendResolved(false), "foo", 0),
+				notify.NewIntegration(&webhook.Notifier{}, sendResolved(true), "foo", 1),
 			},
 		},
 		{
@@ -83,6 +84,7 @@ func TestBuildReceiverIntegrations(t *testing.T) {
 			for i := range tc.exp {
 				require.Equal(t, tc.exp[i].SendResolved(), integrations[i].SendResolved())
 				require.Equal(t, tc.exp[i].Name(), integrations[i].Name())
+				require.Equal(t, tc.exp[i].Type(), integrations[i].Type())
 				require.Equal(t, tc.exp[i].Index(), integrations[i].Index())
 			}
 		})
